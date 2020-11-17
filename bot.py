@@ -1,6 +1,6 @@
 from pyrogram import Client,filters
 
-app_id = your api hash
+app_id = 'your api hash'
 app_key = 'your api id'
 token = "api token"
 
