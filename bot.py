@@ -35,7 +35,7 @@ PHONE_NUMBER_TEXT = (
     "Press /cancel to Cancel Task."
 )
 
-@bot.on_message(filters.private & filters.command("start"))
+@borg.on_message(filters.private & filters.command("start"))
 async def genStr(_, msg: Message):
     chat = msg.chat
     api = await bot.ask(
@@ -146,13 +146,13 @@ async def genStr(_, msg: Message):
         return
 
 
-@bot.on_message(filters.private & filters.command("restart"))
+@borg.on_message(filters.private & filters.command("restart"))
 async def restart(_, msg: Message):
     await msg.reply("Restarted Bot!")
     HU_APP.restart()
 
 
-@bot.on_message(filters.private & filters.command("help"))
+@borg.on_message(filters.private & filters.command("help"))
 async def restart(_, msg: Message):
     out = f"""
 Hi, {msg.from_user.mention}. This is Session String Generator Bot. \
