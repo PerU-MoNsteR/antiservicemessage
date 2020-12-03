@@ -8,6 +8,20 @@ from telethon import TelegramClient, events, custom
 from telethon.sessions import StringSession
 from telethon.errors.rpcerrorlist import SessionPasswordNeededError, PhoneCodeInvalidError
 
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# the secret configuration specific things
+ENV = bool(os.environ.get("ENV", False))
+if ENV:
+    from sample_config import Config
+else:
+    if os.path.exists("config.py"):
+        from config import Development as Config
+    else:
+        logging.warning("No config.py Found!")
+        logging.info("Please run the command, again, after creating config.py similar to README.md")
+        sys.exit(1)
 
 
 API_TEXT = """Hi, {}.
