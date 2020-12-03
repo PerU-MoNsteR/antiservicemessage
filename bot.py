@@ -51,7 +51,7 @@ async def main():
             # logging.info(event.stringify())
             APP_ID, API_HASH = GetAppIDApiHash(
                 config.APP_ID,
-                c onfig.API_HASH
+                config.API_HASH
             )
             async with event.client.conversation(event.chat_id) as conv:
                 await conv.send_message(Translation.INPUT_PHONE_NUMBER)
