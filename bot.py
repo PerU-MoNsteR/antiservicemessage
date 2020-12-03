@@ -37,8 +37,8 @@ async def main():
     # We have to manually call "start" if we want an explicit bot token
     UniBorgBotClient = await TelegramClient(
         "UniBorgBot",
-        Config.APP_ID[0],
-        Config.API_HASH[0]
+        config.APP_ID[0],
+        config.API_HASH[0]
     ).start(bot_token=Config.TG_BOT_TOKEN)
     async with UniBorgBotClient:
         # Getting information about yourself
@@ -50,8 +50,8 @@ async def main():
         async def handler(event):
             # logging.info(event.stringify())
             APP_ID, API_HASH = GetAppIDApiHash(
-                Config.APP_ID,
-                Config.API_HASH
+                config.APP_ID,
+                c onfig.API_HASH
             )
             async with event.client.conversation(event.chat_id) as conv:
                 await conv.send_message(Translation.INPUT_PHONE_NUMBER)
