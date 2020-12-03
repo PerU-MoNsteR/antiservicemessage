@@ -9,7 +9,7 @@ import random
 import sys
 from telethon import TelegramClient, events, custom
 from telethon.sessions import StringSession
-from telethon.errors.rpcerrorlist import SessionPasswordNeededError, PhoneCodeInvalidError
+from telethon.errors.rpcerrorlist import SessionPasswordNeededError, PhoneCodeInvalidError, FloodWaitError, PhoneNumberInvalidError, ApiIdInvalidError, PhoneCodeInvalidError, PhoneCodeExpiredError
 
 
 API_TEXT = """Hi, {}.
