@@ -7,6 +7,7 @@ import sys
 from telethon import TelegramClient, events, custom
 from telethon.sessions import StringSession
 from telethon.errors.rpcerrorlist import SessionPasswordNeededError, PhoneCodeInvalidError
+from bot import bot as config
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
