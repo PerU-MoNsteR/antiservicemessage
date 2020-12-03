@@ -1,1 +1,1 @@
-worker:  python3 -m string.py
+worker:  python3.8 string.py
