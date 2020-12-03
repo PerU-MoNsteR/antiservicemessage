@@ -1,6 +1,6 @@
 import asyncio
 
-from bot import bot, HU_APP
+from string import string, HU_APP
 from asyncio.exceptions import TimeoutError
 import asyncio
 import logging
