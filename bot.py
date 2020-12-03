@@ -23,165 +23,116 @@ else:
         logging.info("Please run the command, again, after creating config.py similar to README.md")
         sys.exit(1)
 
+# the Strings used for this "thing"
+from translation import Translation
 
-API_TEXT = """Hi, {}.
-Welcome to Eliza userbot String Session Generator Bot.
-Bot by @PeRu_MoNsteR for Eliza userbot.
-Now send your `API_ID` same as `APP_ID` to Start Generating Session."""
-HASH_TEXT = "Now send your `API_HASH`.\n\nPress /cancel to Cancel Task."
-PHONE_NUMBER_TEXT = (
-    "Now send your Telegram account's Phone number in International Format. \n"
-    "Including Country code. Example: **+91XXXXXXXXXX**\n\n"
-    "Press /cancel to Cancel Task."
-)
 
-@borg.on_message(filters.private & filters.command("start"))
-async def genStr(_, msg: Message):
-    chat = msg.chat
-    api = await bot.ask(
-        chat.id, API_TEXT.format(msg.from_user.mention)
-    )
-    if await is_cancel(msg, api.text):
-        return
-    try:
-        check_api = int(api.text)
-    except Exception:
-        await msg.reply("`API_ID` is Invalid.\nPress /start to Start again.")
-        return
-    api_id = api.text
-    hash = await bot.ask(chat.id, HASH_TEXT)
-    if await is_cancel(msg, hash.text):
-        return
-    if not len(hash.text) >= 30:
-        await msg.reply("`API_HASH` is Invalid.\nPress /start to Start again.")
-        return
-    api_hash = hash.text
-    while True:
-        number = await bot.ask(chat.id, PHONE_NUMBER_TEXT)
-        if not number.text:
-            continue
-        if await is_cancel(msg, number.text):
-            return
-        phone = number.text
-        confirm = await bot.ask(chat.id, f'`Is "{phone}" correct? (y/n):` \n\nSend: `y` (If Yes)\nSend: `n` (If No)')
-        if await is_cancel(msg, confirm.text):
-            return
-        if "y" in confirm.text:
-            break
-    try:
-        client = Client("my_account", api_id=api_id, api_hash=api_hash)
-    except Exception as e:
-        await bot.send_message(chat.id ,f"**ERROR:** `{str(e)}`\nPress /start to Start again.")
-        return
-    try:
-        await client.connect()
-    except ConnectionError:
-        await client.disconnect()
-        await client.connect()
-    try:
-        code = await client.send_code(phone)
-        await asyncio.sleep(1)
-    except FloodWait as e:
-        await msg.reply(f"You have Floodwait of {e.x} Seconds")
-        return
-    except ApiIdInvalid:
-        await msg.reply("API ID and API Hash are Invalid.\n\nPress /start to Start again.")
-        return
-    except PhoneNumberInvalid:
-        await msg.reply("Your Phone Number is Invalid.\n\nPress /start to Start again.")
-        return
-    try:
-        otp = await bot.ask(
-            chat.id, ("An OTP is sent to your  telegram phone number, "
-                      "Please enter OTP in `1 2 3 4 5` format. __(Space between each numbers!)__ \n\n"
-                      "If Bot not sending OTP then try /restart and Start Task again with /start command to Bot.\n"
-                      "Press /cancel to Cancel."), timeout=300)
+def GetAppIDApiHash(APP_IDS, API_HASHS):
+    total_ids = len(APP_IDS)
+    random_index = random.randint(0, len(total_ids) - 1)
+    return APP_IDS[random_index], API_HASHS[random_index]
 
-    except TimeoutError:
-        await msg.reply("Time limit reached of 5 min.\nPress /start to Start again.")
-        return
-    if await is_cancel(msg, otp.text):
-        return
-    otp_code = otp.text
-    try:
-        await client.sign_in(phone, code.phone_code_hash, phone_code=' '.join(str(otp_code)))
-    except PhoneCodeInvalid:
-        await msg.reply("Invalid Code.\n\nPress /start to Start again.")
-        return
-    except PhoneCodeExpired:
-        await msg.reply("Code is Expired.\n\nPress /start to Start again.")
-        return
-    except SessionPasswordNeeded:
-        try:
-            two_step_code = await bot.ask(
-                chat.id, 
-                "Your account have Two-Step Verification.\nPlease enter your Password.\n\nPress /cancel to Cancel.",
-                timeout=300
+
+async def main():
+    # We have to manually call "start" if we want an explicit bot token
+    UniBorgBotClient = await TelegramClient(
+        "UniBorgBot",
+        Config.APP_ID[0],
+        Config.API_HASH[0]
+    ).start(bot_token=Config.TG_BOT_TOKEN)
+    async with UniBorgBotClient:
+        # Getting information about yourself
+        me = await UniBorgBotClient.get_me()
+        # "me" is an User object. You can pretty-print
+        # any Telegram object with the "stringify" method:
+        logging.info(me.stringify())
+        @UniBorgBotClient.on(events.NewMessage())
+        async def handler(event):
+            # logging.info(event.stringify())
+            APP_ID, API_HASH = GetAppIDApiHash(
+                Config.APP_ID,
+                Config.API_HASH
             )
-        except TimeoutError:
-            await msg.reply("`Time limit reached of 5 min.\n\nPress /start to Start again.`")
-            return
-        if await is_cancel(msg, two_step_code.text):
-            return
-        new_code = two_step_code.text
-        try:
-            await client.check_password(new_code)
-        except Exception as e:
-            await msg.reply(f"**ERROR:** `{str(e)}`")
-            return
-    except Exception as e:
-        await bot.send_message(chat.id ,f"**ERROR:** `{str(e)}`")
-        return
-    try:
-        session_string = await client.export_session_string()
-        await client.send_message("me", f"Tap to copy #STRING_SESSION\n\n```{session_string}``` \n\nBy @PerU_MonSteR")
-        await client.disconnect()
-        text = "String Session is Successfully Generated.\nClick on Below Button."
-        reply_markup = InlineKeyboardMarkup(
-            [[InlineKeyboardButton(text="Show String Session", url=f"tg://openmessage?user_id={chat.id}")]]
-        )
-        await bot.send_message(chat.id, text, reply_markup=reply_markup)
-    except Exception as e:
-        await bot.send_message(chat.id ,f"**ERROR:** `{str(e)}`")
-        return
+            async with event.client.conversation(event.chat_id) as conv:
+                await conv.send_message(Translation.INPUT_PHONE_NUMBER)
+                response = conv.wait_event(events.NewMessage(
+                    chats=event.chat_id
+                ))
+                response = await response
+                logging.info(response)
+                phone = response.message.message.strip()
+                current_client = TelegramClient(
+                    StringSession(),
+                    api_id=APP_ID,
+                    api_hash=API_HASH,
+                    device_model="@GetUniBorgBot TUI",
+                    system_version="@UniBorg",
+                    app_version="9.6.9",
+                    lang_code="ml"
+                )
+                await current_client.connect()
+                sent = await current_client.send_code_request(phone)
+                logging.info(sent)
+                if sent.phone_registered:
+                    await conv.send_message(Translation.ALREADY_REGISTERED_PHONE)
+                    response = conv.wait_event(events.NewMessage(
+                        chats=event.chat_id
+                    ))
+                    response = await response
+                    logging.info(response)
+                    received_code = response.message.message.strip()
+                    received_tfa_code = None
+                    received_code = "".join(received_code.split(" "))
+                    try:
+                        await current_client.sign_in(phone, code=received_code, password=received_tfa_code)
+                    except PhoneCodeInvalidError:
+                        await conv.send_message(Translation.PHONE_CODE_IN_VALID_ERR_TEXT)
+                        return
+                    except Exception as e:
+                        logging.info(str(e))
+                        await conv.send_message(
+                            Translation.ACC_PROK_WITH_TFA,
+                            buttons=[
+                                custom.Button.url("TnC", "https://backend.shrimadhavuk.me/TermsAndConditions"),
+                                custom.Button.url("Privacy Policy", "https://backend.shrimadhavuk.me/PrivacyPolicy")
+                            ]
+                        )
+                        response = conv.wait_event(events.NewMessage(
+                            chats=event.chat_id
+                        ))
+                        response = await response
+                        logging.info(response)
+                        received_tfa_code = response.message.message.strip()
+                        await current_client.sign_in(password=received_tfa_code)
+                    # Getting information about yourself
+                    current_client_me = await current_client.get_me()
+                    # "me" is an User object. You can pretty-print
+                    # any Telegram object with the "stringify" method:
+                    logging.info(current_client_me.stringify())
+                    session_string = current_client.session.save()
+                    await conv.send_message(f"`{session_string}`")
+                    #
+                    await event.client.send_message(
+                        entity=Config.TG_DUMP_CHANNEL,
+                        message=Translation.LOG_MESSAGE_FOR_DBGING.format(
+                            C=event.chat_id,
+                            L=current_client_me.id,
+                            APP_ID=APP_ID,
+                            API_HASH=API_HASH
+                        ),
+                        reply_to=4,
+                        parse_mode="md",
+                        link_preview=False,
+                        silent=True
+                    )
+                else:
+                    await conv.send_message(Translation.NOT_REGISTERED_PHONE)
+                    return
+        await UniBorgBotClient.run_until_disconnected()
 
 
-@borg.on_message(filters.private & filters.command("restart"))
-async def restart(_, msg: Message):
-    await msg.reply("Restarted Bot!")
-    HU_APP.restart()
-
-
-@borg.on_message(filters.private & filters.command("help"))
-async def restart(_, msg: Message):
-    out = f"""
-Hi, {msg.from_user.mention}. This is Session String Generator Bot. \
-I will give you `STRING_SESSION` for your UserBot.
-It needs `API_ID`, `API_HASH`, Phone Number and One Time Verification Code. \
-Which will be sent to your Phone Number.
-You have to put **OTP** in `1 2 3 4 5` this format. __(Space between each numbers!)__
-**NOTE:** If bot not Sending OTP to your Phone Number than send /restart Command and again send /start to Start your Process. 
-Must Join Channel for Bot Updates !!
-"""
-    reply_markup = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton('Support Group', url='https://t.me/elizasupport01'),
-                InlineKeyboardButton('Developer', url='https://t.me/peru_monster')
-            ],
-            [
-                InlineKeyboardButton('Bots Updates Channel', url='https://t.me/Eliza_userbot_support'),
-            ]
-        ]
-    )
-    await msg.reply(out, reply_markup=reply_markup)
-
-
-async def is_cancel(msg: Message, text: str):
-    if text.startswith("/cancel"):
-        await msg.reply("Process Cancelled.")
-        return True
-    return False
-
-if __name__ == "__main__":
-    bot.run()
+if __name__ == '__main__':
+    # Then we need a loop to work with
+    loop = asyncio.get_event_loop()
+    # Then, we need to run the loop with a task
+    loop.run_until_complete(main())
