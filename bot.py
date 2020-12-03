@@ -1,13 +1,12 @@
-
-import asyncio
-import logging
 import os
+import asyncio
+from bot import bot
+import logging
 import random
 import sys
 from telethon import TelegramClient, events, custom
 from telethon.sessions import StringSession
 from telethon.errors.rpcerrorlist import SessionPasswordNeededError, PhoneCodeInvalidError
-from bot import bot
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
